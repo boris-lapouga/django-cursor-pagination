@@ -2,7 +2,6 @@ from base64 import b64decode, b64encode
 from collections import Sequence
 
 from django.db.models import Field, Func, Value, TextField
-from django.utils import six
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -105,8 +104,10 @@ class CursorPaginator(object):
         position = self.decode_cursor(cursor)
 
         is_reversed = self.ordering[0].startswith('-')
-        queryset = queryset.annotate(_cursor=Tuple(*[o.lstrip('-') for o in self.ordering]))
-        current_position = [Value(p, output_field=TextField()) for p in position]
+        queryset = queryset.annotate(_cursor=Tuple(
+            *[o.lstrip('-') for o in self.ordering]))
+        current_position = [Value(p, output_field=TextField())
+                            for p in position]
         if reverse != is_reversed:
             return queryset.filter(_cursor__lt=Tuple(*current_position))
         return queryset.filter(_cursor__gt=Tuple(*current_position))
@@ -119,7 +120,8 @@ class CursorPaginator(object):
             raise InvalidCursor(self.invalid_cursor_message)
 
     def encode_cursor(self, position):
-        encoded = b64encode(self.delimiter.join(position).encode('utf8')).decode('ascii')
+        encoded = b64encode(self.delimiter.join(
+            position).encode('utf8')).decode('ascii')
         return encoded
 
     def position_from_instance(self, instance):
@@ -130,7 +132,7 @@ class CursorPaginator(object):
             while parts:
                 attr = getattr(attr, parts[0])
                 parts.pop(0)
-            position.append(six.text_type(attr))
+            position.append(str(attr))
         return position
 
     def cursor(self, instance):
